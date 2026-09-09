@@ -6,258 +6,29 @@
 <title>ECD Loan Calculator</title>
 <meta name="description" content="An interactive repayment and affordability calculator for Rhiza Ventures' SeedFund Connect ECD growth loans, with NCA fee handling, an amortisation schedule and right-size verdicts.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<style>
-  *{box-sizing:border-box;}
-  html{ color-scheme: light dark; }
-  :root{
-    --bg:#F5F0E4; --surface:#FFFFFF; --surface-2:#ECE3CE; --surface-3:#E3D6B4;
-    --ink:#1C2624; --ink-muted:#5B6863; --ink-faint:#8A948F; --rule:#DAD0B4;
-    --teal:#234E49; --teal-deep:#16332F; --teal-tint:#DDE7E2;
-    --gold:#B97A22; --gold-deep:#8F5C15; --gold-tint:#F1DFB9;
-    --good:#2E7D53; --good-tint:#DCEFE3;
-    --warning:#B4650C; --warning-tint:#F5E1C9;
-    --critical:#A83B32; --critical-tint:#F3DCD8;
-    --cat-1:#234E49; --cat-2:#B97A22; --cat-3:#4C5E8C;
-    --shadow: 0 1px 2px rgba(28,38,36,.06), 0 8px 24px -12px rgba(28,38,36,.18);
-    --focus: #8AA6A0;
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --bg:#101B18; --surface:#16241F; --surface-2:#1D3129; --surface-3:#24392F;
-      --ink:#EDE6D3; --ink-muted:#A7B3AC; --ink-faint:#71827A; --rule:#2C4038;
-      --teal:#5FA396; --teal-deep:#3E7A6E; --teal-tint:#1E332C;
-      --gold:#DDA657; --gold-deep:#B9843C; --gold-tint:#3A2E1A;
-      --good:#59B686; --good-tint:#1D3327;
-      --warning:#E2952F; --warning-tint:#3A2A15;
-      --critical:#E17B6E; --critical-tint:#3A2019;
-      --cat-1:#5FA396; --cat-2:#DDA657; --cat-3:#8195C9;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
-      --focus:#5FA396;
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg:#101B18; --surface:#16241F; --surface-2:#1D3129; --surface-3:#24392F;
-    --ink:#EDE6D3; --ink-muted:#A7B3AC; --ink-faint:#71827A; --rule:#2C4038;
-    --teal:#5FA396; --teal-deep:#3E7A6E; --teal-tint:#1E332C;
-    --gold:#DDA657; --gold-deep:#B9843C; --gold-tint:#3A2E1A;
-    --good:#59B686; --good-tint:#1D3327;
-    --warning:#E2952F; --warning-tint:#3A2A15;
-    --critical:#E17B6E; --critical-tint:#3A2019;
-    --cat-1:#5FA396; --cat-2:#DDA657; --cat-3:#8195C9;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
-    --focus:#5FA396;
-  }
-
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:"Public Sans", ui-sans-serif, system-ui, sans-serif;
-    font-size:14px; line-height:1.5;
-  }
-  img{ max-width:100%; }
-  h1,h2,h3{ font-family:"Fraunces", Georgia, serif; text-wrap:balance; margin:0; font-weight:600; letter-spacing:-.01em;}
-  ::selection{ background:var(--gold-tint); }
-  a{ color:var(--teal); }
-  :focus-visible{ outline:2px solid var(--focus); outline-offset:2px; border-radius:4px;}
-  .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; }
-  .tabular{ font-variant-numeric:tabular-nums; }
-
-  /* ---------- Header ---------- */
-  .app-header{
-    padding:28px clamp(16px,4vw,40px) 20px;
-    border-bottom:1px solid var(--rule);
-    background:var(--surface);
-  }
-  .eyebrow{
-    font:600 11px/1 "Public Sans",sans-serif; letter-spacing:.12em; text-transform:uppercase;
-    color:var(--teal); display:flex; align-items:center; gap:8px; margin-bottom:10px;
-  }
-  .eyebrow .mark{
-    width:16px; height:16px; border-radius:4px; background:var(--teal);
-    display:inline-flex; align-items:center; justify-content:center; flex:none;
-  }
-  .eyebrow .mark svg{ width:10px; height:10px; }
-  .app-header h1{ font-size:clamp(24px,3vw,30px); color:var(--ink); }
-  .app-header p.lede{
-    max-width:62ch; color:var(--ink-muted); margin-top:6px; font-size:14.5px;
-  }
-  .presets{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
-  .preset-btn{
-    font:500 12.5px "Public Sans",sans-serif; padding:7px 13px; border-radius:100px;
-    border:1px solid var(--rule); background:var(--surface); color:var(--ink-muted);
-    cursor:pointer; transition:border-color .15s, color .15s, background .15s;
-  }
-  .preset-btn:hover{ border-color:var(--teal); color:var(--teal); }
-  .preset-btn[aria-pressed="true"]{
-    background:var(--teal); border-color:var(--teal); color:#fff;
-  }
-
-  /* ---------- Layout ---------- */
-  .layout{
-    display:grid; grid-template-columns:340px 1fr; gap:20px;
-    padding:24px clamp(16px,4vw,40px) 60px; align-items:start;
-  }
-  @media (max-width:880px){ .layout{ grid-template-columns:1fr; } }
-
-  .card{
-    background:var(--surface); border:1px solid var(--rule); border-radius:14px;
-    box-shadow:var(--shadow); padding:20px;
-  }
-  .panel-inputs{ position:sticky; top:20px; display:flex; flex-direction:column; gap:18px; }
-  @media (max-width:880px){ .panel-inputs{ position:static; } }
-  .panel-results{ display:flex; flex-direction:column; gap:18px; min-width:0; }
-
-  .card h2{ font-size:16px; }
-  .card h2 .unit{ font-family:"Public Sans"; font-weight:500; font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.08em; }
-  .section-title{
-    font:600 11px "Public Sans"; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint);
-    margin-bottom:12px;
-  }
-
-  /* ---------- Form ---------- */
-  .field{ display:flex; flex-direction:column; gap:5px; }
-  .field + .field{ margin-top:12px; }
-  .field label{ font-size:12.5px; font-weight:600; color:var(--ink-muted); }
-  .field .hint{ font-size:11.5px; color:var(--ink-faint); }
-  .input-wrap{ position:relative; display:flex; align-items:center; }
-  .input-wrap .prefix{
-    position:absolute; left:11px; font-size:13.5px; color:var(--ink-faint); font-family:"IBM Plex Mono";
-    pointer-events:none;
-  }
-  .input-wrap .suffix{
-    position:absolute; right:11px; font-size:12.5px; color:var(--ink-faint); pointer-events:none;
-  }
-  input[type=text], input[type=number]{
-    width:100%; border:1px solid var(--rule); background:var(--bg); color:var(--ink);
-    border-radius:9px; padding:9px 12px; font:500 14px "IBM Plex Mono", monospace;
-    transition:border-color .15s, box-shadow .15s;
-  }
-  .input-wrap.has-prefix input{ padding-left:24px; }
-  .input-wrap.has-suffix input{ padding-right:38px; }
-  input:focus{ border-color:var(--teal); box-shadow:0 0 0 3px var(--teal-tint); outline:none; }
-  input[type=text]{ font-family:"Public Sans"; font-weight:500; }
-
-  .toggle-row{ display:flex; border:1px solid var(--rule); border-radius:9px; overflow:hidden; }
-  .toggle-row button{
-    flex:1; padding:8px 6px; font:600 12px "Public Sans"; background:var(--bg); color:var(--ink-muted);
-    border:none; cursor:pointer; border-right:1px solid var(--rule);
-  }
-  .toggle-row button:last-child{ border-right:none; }
-  .toggle-row button[aria-pressed="true"]{ background:var(--teal); color:#fff; }
-
-  .divider{ border:none; border-top:1px dashed var(--rule); margin:2px 0; }
-
-  /* ---------- Stat tiles ---------- */
-  .stat-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:14px; overflow:hidden; box-shadow:var(--shadow);}
-  .stat-tile{ background:var(--surface); padding:16px 18px; }
-  .stat-tile.lead{ background:var(--teal); }
-  .stat-tile .stat-label{ font-size:11.5px; color:var(--ink-faint); font-weight:600; letter-spacing:.02em; }
-  .stat-tile.lead .stat-label{ color:#DCE9E5; }
-  .stat-tile .stat-value{ font:600 24px "Public Sans"; margin-top:6px; letter-spacing:-.01em; }
-  .stat-tile.lead .stat-value{ color:#fff; }
-  .stat-tile .stat-sub{ font-size:12px; color:var(--ink-faint); margin-top:3px; font-family:"IBM Plex Mono"; }
-  .stat-tile.lead .stat-sub{ color:#B9D2CB; }
-
-  /* ---------- Verdict ---------- */
-  .verdict-card{ display:flex; flex-direction:column; gap:12px; }
-  .verdict-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-  .pill{
-    display:inline-flex; align-items:center; gap:6px; font:700 11.5px "Public Sans"; letter-spacing:.05em;
-    text-transform:uppercase; padding:5px 12px; border-radius:100px;
-  }
-  .pill::before{ content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
-  .pill.good{ background:var(--good-tint); color:var(--good); }
-  .pill.warning{ background:var(--warning-tint); color:var(--warning); }
-  .pill.critical{ background:var(--critical-tint); color:var(--critical); }
-  .verdict-body p{ margin:0; color:var(--ink-muted); font-size:13.5px; max-width:60ch; }
-  .verdict-figures{ display:flex; gap:24px; flex-wrap:wrap; margin-top:2px; }
-  .verdict-figures div{ display:flex; flex-direction:column; gap:2px; }
-  .verdict-figures .k{ font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
-  .verdict-figures .v{ font:600 18px "IBM Plex Mono"; color:var(--ink); }
-
-  /* ---------- Charts ---------- */
-  .chart-card .chart-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; gap:10px; flex-wrap:wrap;}
-  .chart-card .chart-head p{ margin:0; color:var(--ink-muted); font-size:12.5px; }
-  .chart-wrap{ position:relative; margin-top:6px; }
-  .chart-wrap svg{ width:100%; height:auto; display:block; overflow:visible; }
-  .gridline{ stroke:var(--rule); stroke-width:1; }
-  .axis-label{ fill:var(--ink-faint); font:11px "IBM Plex Mono"; }
-  .balance-area{ fill:var(--teal); opacity:.12; }
-  .balance-line{ fill:none; stroke:var(--teal); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
-  .balance-dot{ fill:var(--teal); stroke:var(--surface); stroke-width:2; }
-  .crosshair{ stroke:var(--ink-faint); stroke-width:1; stroke-dasharray:3 3; opacity:0; }
-  .end-label{ font:600 11.5px "IBM Plex Mono"; fill:var(--teal); }
-
-  .tooltip{
-    position:absolute; pointer-events:none; background:var(--teal-deep); color:#F3EFE1;
-    border-radius:9px; padding:9px 12px; font-size:12px; box-shadow:var(--shadow);
-    opacity:0; transform:translate(-50%,-100%); transition:opacity .1s; white-space:nowrap; z-index:5;
-  }
-  .tooltip .tt-title{ font-weight:700; margin-bottom:5px; font-family:"Public Sans"; font-size:11.5px; letter-spacing:.02em; opacity:.85;}
-  .tooltip .tt-row{ display:flex; justify-content:space-between; gap:14px; font-family:"IBM Plex Mono"; }
-  .tooltip .tt-row + .tt-row{ margin-top:2px; }
-  .tooltip .tt-row span:first-child{ opacity:.75; }
-
-  .bar-chart{ display:flex; align-items:flex-end; gap:14px; height:150px; margin-top:14px; padding:0 4px;}
-  .bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:6px; position:relative;}
-  .bar-col .bar-value{ font:600 11.5px "IBM Plex Mono"; color:var(--ink-muted); }
-  .bar-col.current .bar-value{ color:var(--teal); }
-  .bar-col .bar{ width:100%; max-width:34px; border-radius:4px 4px 0 0; background:var(--gold); transition:height .25s ease; cursor:default; }
-  .bar-col.current .bar{ background:var(--teal); }
-  .bar-col .bar-x{ font:600 11px "Public Sans"; color:var(--ink-faint); margin-top:2px; }
-  .bar-col.current .bar-x{ color:var(--teal); }
-
-  .stack-bar{ display:flex; width:100%; height:28px; border-radius:6px; overflow:hidden; background:var(--surface-2); gap:2px; margin-top:14px; }
-  .stack-seg{ height:100%; min-width:2px; position:relative; cursor:default; }
-  .stack-seg[data-k="0"]{ background:var(--cat-1); }
-  .stack-seg[data-k="1"]{ background:var(--cat-2); }
-  .stack-seg[data-k="2"]{ background:var(--cat-3); }
-  .legend-row{ display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; }
-  .legend-item{ display:flex; align-items:center; gap:7px; font-size:12.5px; }
-  .legend-item .sw{ width:10px; height:10px; border-radius:3px; flex:none; }
-  .legend-item .sw.c0{ background:var(--cat-1); }
-  .legend-item .sw.c1{ background:var(--cat-2); }
-  .legend-item .sw.c2{ background:var(--cat-3); }
-  .legend-item .lbl{ color:var(--ink-muted); }
-  .legend-item .amt{ font-family:"IBM Plex Mono"; font-weight:600; color:var(--ink); }
-
-  /* ---------- Schedule table ---------- */
-  details.schedule summary{
-    cursor:pointer; font:600 13px "Public Sans"; color:var(--teal); list-style:none;
-    display:flex; align-items:center; gap:8px; padding:2px 0;
-  }
-  details.schedule summary::-webkit-details-marker{ display:none; }
-  details.schedule summary .chev{ transition:transform .18s; display:inline-flex; }
-  details.schedule[open] summary .chev{ transform:rotate(90deg); }
-  .table-scroll{ overflow-x:auto; margin-top:14px; border:1px solid var(--rule); border-radius:10px; }
-  table.schedule-table{ border-collapse:collapse; width:100%; min-width:640px; font-family:"IBM Plex Mono"; font-size:12px; }
-  table.schedule-table th{
-    position:sticky; top:0; background:var(--surface-2); color:var(--ink-muted); font-weight:600;
-    text-align:right; padding:9px 12px; border-bottom:1px solid var(--rule); white-space:nowrap;
-  }
-  table.schedule-table th:first-child, table.schedule-table td:first-child{ text-align:left; }
-  table.schedule-table td{ text-align:right; padding:7px 12px; white-space:nowrap; }
-  table.schedule-table tbody tr:nth-child(even){ background:var(--bg); }
-  table.schedule-table tbody tr.grace-row{ color:var(--ink-faint); font-style:italic; }
-  table.schedule-table tbody tr:hover{ background:var(--gold-tint); }
-
-  .note{
-    font-size:12px; color:var(--ink-faint); border-top:1px solid var(--rule); padding-top:12px; margin-top:2px;
-  }
-
-  .app-footer{
-    padding:24px clamp(16px,4vw,40px) 40px; color:var(--ink-faint); font-size:12px;
-    border-top:1px solid var(--rule); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
-  }
-
-  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
-</style>
+<link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
+<header class="site-nav">
+  <a class="brand" href="index.html">
+    <span class="brand-mark"><span></span><span></span><span></span></span>
+    <span>SeedFund Connect<small>ECD Loan Calculator</small></span>
+  </a>
+  <nav aria-label="Primary">
+    <a href="index.html" class="nav-link" id="nav-new" aria-current="page">New Application</a>
+    <a href="applications.html" class="nav-link" id="nav-list">Applications</a>
+  </nav>
+</header>
+
 <header class="app-header">
-  <div class="eyebrow"><span class="mark"><svg viewBox="0 0 10 10" fill="none"><path d="M1 6.5L4 9L9 1.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Rhiza Ventures &middot; SeedFund Connect</div>
-  <h1>ECD Loan Calculator</h1>
-  <p class="lede">Works out repayments and affordability for informal ECD growth loans — including the National Credit Act initiation fee and monthly service fee — and right-sizes a request against what a pre-school can actually pay.</p>
+  <div class="header-row">
+    <div>
+      <div class="eyebrow"><span class="mark"><svg viewBox="0 0 10 10" fill="none"><path d="M1 6.5L4 9L9 1.5" stroke="#26333C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Rhiza Ventures &middot; SeedFund Connect</div>
+      <h1 id="page-title">New ECD Application</h1>
+      <p class="lede">Works out repayments and affordability for informal ECD growth loans — including the National Credit Act initiation fee and monthly service fee — and right-sizes a request against what a pre-school can actually pay.</p>
+    </div>
+  </div>
   <div class="presets" id="presets" role="group" aria-label="Example scenarios"></div>
 </header>
 
@@ -321,6 +92,19 @@
         <div class="input-wrap has-prefix"><span class="prefix">R</span><input type="number" id="in-capacity" value="300" min="0" step="10"></div>
       </div>
     </div>
+
+    <hr class="divider">
+
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="btn-save" style="flex:1">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 2h7.5L12.5 4v9H3V2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5 2v3.5h4V2M5 9h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span id="btn-save-label">Save application</span>
+      </button>
+      <button type="button" class="btn btn-secondary" id="btn-print">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M4 5.5V2h7v3.5M4 11h7v2.5H4V11Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><rect x="1.5" y="5.5" width="12" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+        Print / save as PDF
+      </button>
+    </div>
   </section>
 
   <section class="panel-results" id="results" aria-label="Results"></section>
@@ -331,82 +115,17 @@
   <span>For demonstration &amp; internal assessment use.</span>
 </footer>
 
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span class="dot"></span>
+  <span id="toast-msg">Saved.</span>
+  <a href="applications.html" id="toast-link">View applications →</a>
+</div>
+
+<script src="assets/calc.js"></script>
 <script>
 (function(){
   "use strict";
-
-  // ---------------- core math (ports ecd_loan_calculator.py exactly) ----------------
-  function pmt(principal, i, n){
-    if(n<=0) return 0;
-    if(i===0) return principal/n;
-    return principal*i/(1-Math.pow(1+i,-n));
-  }
-  function maxLoan(payment, i, n){
-    if(n<=0 || payment<=0) return 0;
-    if(i===0) return payment*n;
-    return payment*(1-Math.pow(1+i,-n))/i;
-  }
-
-  function repaymentReport(amount, annualRate, term, grace, initFee, initFinanced, serviceFee){
-    var i = annualRate/100/12;
-    var financed = amount + (initFinanced ? initFee : 0);
-    var start = financed;
-    for(var g=0; g<grace; g++){ start += start*i; }
-    var payN = Math.max(1, term-grace);
-    var instalment = pmt(start, i, payN);
-    var allIn = instalment + serviceFee;
-
-    var balance = financed, totalInterest = 0;
-    var schedule = [{m:0, opening:financed, instal:null, interest:null, principal:null, serviceFee:null, total:null, balance:financed, isGrace:false}];
-    for(var m=1; m<=term; m++){
-      var opening = balance, interest = balance*i, instal, principal;
-      var isGrace = m<=grace;
-      if(isGrace){ instal = 0; principal = -interest; balance += interest; }
-      else { instal = instalment; principal = instal-interest; balance -= principal; if(balance<0.5) balance = 0; }
-      totalInterest += Math.max(interest,0);
-      schedule.push({m:m, opening:opening, instal:instal, interest:interest, principal:principal,
-                      serviceFee:serviceFee, total:instal+serviceFee, balance:balance, isGrace:isGrace});
-    }
-    var totalService = serviceFee*term;
-    var totalFees = initFee + totalService;
-    var totalRepayable = instalment*payN + totalService + (initFinanced ? 0 : initFee);
-    var costPct = amount>0 ? (totalRepayable-amount)/amount*100 : 0;
-
-    return {instalment:instalment, allIn:allIn, totalInterest:totalInterest, totalService:totalService,
-            totalFees:totalFees, totalRepayable:totalRepayable, costPct:costPct, schedule:schedule, financed:financed};
-  }
-
-  function affordabilityReport(capacity, annualRate, term, target, initFee, initFinanced, serviceFee){
-    var i = annualRate/100/12;
-    var avail = capacity - serviceFee;
-    if(avail<=0){ return {avail:avail, insufficient:true}; }
-
-    var maxFin = maxLoan(avail, i, term);
-    var maxToApplicant = Math.max(0, maxFin - (initFinanced ? initFee : 0));
-    var byTerm = [12,24,36,48,60].map(function(t){
-      var mf = maxLoan(avail, i, t);
-      return {t:t, amount: Math.max(0, mf - (initFinanced ? initFee : 0))};
-    });
-
-    var out = {avail:avail, insufficient:false, maxToApplicant:maxToApplicant, byTerm:byTerm, hasTarget:target>0};
-    if(target>0){
-      var targetFin = target + (initFinanced ? initFee : 0);
-      var months;
-      if(i===0){ months = targetFin/avail; }
-      else if(avail <= targetFin*i){ months = Infinity; }
-      else { months = -Math.log(1 - targetFin*i/avail) / Math.log(1+i); }
-      out.months = months;
-      if(maxToApplicant >= target) out.verdict = "OK";
-      else if(months !== Infinity && months<=60) out.verdict = "RIGHT-SIZE";
-      else out.verdict = "DECLINE";
-    }
-    return out;
-  }
-
-  // ---------------- formatting ----------------
-  function rand(x){ return (x<0?"-R":"R") + Math.abs(Math.round(x)).toLocaleString("en-US"); }
-  function rand2(x){ return (x<0?"-R":"R") + Math.abs(x).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
-  function esc(s){ var d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+  var ECD = window.ECD;
 
   // ---------------- presets ----------------
   var PRESETS = [
@@ -431,23 +150,31 @@
     capacity: document.getElementById("in-capacity"),
     finToggle: document.getElementById("fin-toggle"),
     results: document.getElementById("results"),
-    presets: document.getElementById("presets")
+    presets: document.getElementById("presets"),
+    toast: document.getElementById("toast"),
+    toastMsg: document.getElementById("toast-msg"),
+    toastLink: document.getElementById("toast-link"),
+    btnSave: document.getElementById("btn-save"),
+    btnSaveLabel: document.getElementById("btn-save-label"),
+    btnPrint: document.getElementById("btn-print"),
+    pageTitle: document.getElementById("page-title")
   };
-  var state = { initFinanced:true, activePreset:0 };
+  var state = { initFinanced:true, editingId:null };
 
   function buildPresetButtons(){
     els.presets.innerHTML = "";
     PRESETS.forEach(function(p,idx){
       var b = document.createElement("button");
       b.className = "preset-btn"; b.type = "button"; b.textContent = p.name;
-      b.setAttribute("aria-pressed", idx===0 ? "true" : "false");
+      b.setAttribute("aria-pressed", "false");
       b.addEventListener("click", function(){ applyPreset(idx); });
       els.presets.appendChild(b);
     });
   }
   function applyPreset(idx){
     var p = PRESETS[idx];
-    state.activePreset = idx;
+    state.editingId = null;
+    setSaveMode(false);
     els.applicant.value = p.applicant;
     els.amount.value = p.amount;
     els.rate.value = p.rate;
@@ -477,13 +204,64 @@
 
   ["input","change"].forEach(function(evt){
     [els.applicant, els.amount, els.rate, els.term, els.grace, els.initFee, els.svcFee, els.capacity].forEach(function(el){
-      el.addEventListener(evt, render);
+      el.addEventListener(evt, function(){
+        Array.prototype.forEach.call(els.presets.children, function(btn){ btn.setAttribute("aria-pressed","false"); });
+        render();
+      });
     });
   });
 
   function num(el, fallback){ var v = parseFloat(el.value); return isFinite(v) ? v : (fallback||0); }
 
-  // ---------------- chart builders ----------------
+  function currentFormData(){
+    return {
+      applicant: els.applicant.value.trim() || "Unnamed applicant",
+      amount: num(els.amount,0), rate: num(els.rate,0),
+      term: Math.max(1, Math.round(num(els.term,1))),
+      grace: Math.min(Math.max(0, Math.round(num(els.grace,0))), Math.max(1, Math.round(num(els.term,1)))),
+      initFee: num(els.initFee,0), initFinanced: state.initFinanced,
+      svcFee: num(els.svcFee,0), capacity: num(els.capacity,0)
+    };
+  }
+
+  function setSaveMode(editing){
+    els.btnSaveLabel.textContent = editing ? "Update application" : "Save application";
+    els.pageTitle.textContent = editing ? "Edit ECD Application" : "New ECD Application";
+  }
+
+  function showToast(msg, link){
+    els.toastMsg.textContent = msg;
+    els.toastLink.style.display = link ? "" : "none";
+    els.toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function(){ els.toast.classList.remove("show"); }, 3200);
+  }
+
+  els.btnSave.addEventListener("click", function(){
+    var data = currentFormData();
+    if(state.editingId){
+      ECD.updateApplication(state.editingId, data);
+      showToast("Application updated.", true);
+    } else {
+      var rec = ECD.addApplication(data);
+      state.editingId = rec.id;
+      setSaveMode(true);
+      var url = new URL(window.location.href);
+      url.searchParams.set("id", rec.id);
+      history.replaceState(null, "", url);
+      showToast("Application saved.", true);
+    }
+  });
+
+  els.btnPrint.addEventListener("click", function(){
+    // Always print exactly what's on screen right now, saved or not.
+    // (no "noopener" here — same-origin, and sessionStorage's copy-to-new-tab
+    // behaviour, which the draft handoff relies on, is safest without it)
+    ECD.setPrintDraft(currentFormData());
+    window.open("print.html?source=draft", "_blank");
+  });
+
+  // ---------------- chart builders (shared render logic) ----------------
   var SVG_NS = "http://www.w3.org/2000/svg";
   function svgEl(tag, attrs){
     var el = document.createElementNS(SVG_NS, tag);
@@ -498,7 +276,7 @@
     return step*mag;
   }
 
-  function buildBalanceChart(container, schedule, financed, term, opts){
+  function buildBalanceChart(container, schedule, financed, term){
     container.innerHTML = "";
     var W=600,H=240,padL=54,padR=14,padT=14,padB=28;
     var innerW=W-padL-padR, innerH=H-padT-padB;
@@ -509,24 +287,21 @@
     function xAt(m){ return padL + (n>0 ? m/n : 0)*innerW; }
     function yAt(v){ return padT + (1-(v/maxBal))*innerH; }
 
-    // gridlines + y ticks
     var steps=4;
     for(var s=0;s<=steps;s++){
       var val = maxBal*s/steps;
       var y = yAt(val);
       svg.appendChild(svgEl("line",{x1:padL,y1:y,x2:W-padR,y2:y,class:"gridline"}));
       var t = svgEl("text",{x:padL-8,y:y+3,class:"axis-label","text-anchor":"end"});
-      t.textContent = rand(val);
+      t.textContent = ECD.rand(val);
       svg.appendChild(t);
     }
-    // x labels: start, mid, end
     [0, Math.round(n/2), n].forEach(function(m){
       var t = svgEl("text",{x:xAt(m),y:H-8,class:"axis-label","text-anchor": m===0?"start":(m===n?"end":"middle")});
       t.textContent = m===0 ? "Disbursed" : "Month "+m;
       svg.appendChild(t);
     });
 
-    // area + line
     var areaPts = "M"+xAt(0)+","+yAt(schedule[0].balance);
     var linePts = "M"+xAt(0)+","+yAt(schedule[0].balance);
     schedule.forEach(function(pt,idx){
@@ -538,16 +313,13 @@
     svg.appendChild(svgEl("path",{d:areaPts, class:"balance-area"}));
     svg.appendChild(svgEl("path",{d:linePts, class:"balance-line"}));
 
-    // end dot + label
     var lastPt = schedule[schedule.length-1];
     svg.appendChild(svgEl("circle",{cx:xAt(n),cy:yAt(lastPt.balance),r:5,class:"balance-dot"}));
-    var startDot = svgEl("circle",{cx:xAt(0),cy:yAt(schedule[0].balance),r:5,class:"balance-dot"});
-    svg.appendChild(startDot);
+    svg.appendChild(svgEl("circle",{cx:xAt(0),cy:yAt(schedule[0].balance),r:5,class:"balance-dot"}));
     var lbl = svgEl("text",{x:xAt(0)+8,y:yAt(schedule[0].balance)-8,class:"end-label"});
-    lbl.textContent = rand(schedule[0].balance)+" financed";
+    lbl.textContent = ECD.rand(schedule[0].balance)+" financed";
     svg.appendChild(lbl);
 
-    // crosshair
     var chLine = svgEl("line",{x1:0,y1:padT,x2:0,y2:H-padB,class:"crosshair"});
     var chDot = svgEl("circle",{r:5,class:"balance-dot"}); chDot.style.opacity=0;
     svg.appendChild(chLine); svg.appendChild(chDot);
@@ -569,17 +341,17 @@
 
       var rows;
       if(m===0){
-        rows = [["Balance disbursed", rand(pt.balance)]];
+        rows = [["Balance disbursed", ECD.rand(pt.balance)]];
       } else {
         rows = [
-          ["Opening balance", rand(pt.opening)],
-          [pt.isGrace ? "Instalment (grace)" : "Instalment", pt.isGrace ? "—" : rand2(pt.instal)],
-          ["Interest", rand2(pt.interest)],
-          ["Closing balance", rand(pt.balance)]
+          ["Opening balance", ECD.rand(pt.opening)],
+          [pt.isGrace ? "Instalment (grace)" : "Instalment", pt.isGrace ? "—" : ECD.rand2(pt.instal)],
+          ["Interest", ECD.rand2(pt.interest)],
+          ["Closing balance", ECD.rand(pt.balance)]
         ];
       }
       tooltip.innerHTML = "<div class=\"tt-title\">"+(m===0?"Start":"Month "+m)+"</div>" +
-        rows.map(function(r){ return "<div class=\"tt-row\"><span>"+esc(r[0])+"</span><b>"+esc(r[1])+"</b></div>"; }).join("");
+        rows.map(function(r){ return "<div class=\"tt-row\"><span>"+ECD.esc(r[0])+"</span><b>"+ECD.esc(r[1])+"</b></div>"; }).join("");
       var px = rect.left + x, py = rect.top + y;
       var contRect = container.getBoundingClientRect();
       tooltip.style.left = (px-contRect.left)+"px";
@@ -589,8 +361,6 @@
     svg.addEventListener("pointerleave", function(){
       chLine.style.opacity=0; chDot.style.opacity=0; tooltip.style.opacity=0;
     });
-
-    container.appendChild(svg);
   }
 
   function buildTermBars(container, byTerm, currentTerm){
@@ -599,11 +369,11 @@
     byTerm.forEach(function(b){
       var col = document.createElement("div");
       col.className = "bar-col" + (b.t===currentTerm ? " current":"");
-      var val = document.createElement("div"); val.className="bar-value tabular"; val.textContent = rand(b.amount);
+      var val = document.createElement("div"); val.className="bar-value tabular"; val.textContent = ECD.rand(b.amount);
       var bar = document.createElement("div"); bar.className="bar";
       var h = maxAmt>0 ? Math.max(3,(b.amount/maxAmt)*110) : 3;
       bar.style.height = h+"px";
-      bar.title = b.t+" months: "+rand(b.amount);
+      bar.title = b.t+" months: "+ECD.rand(b.amount);
       var x = document.createElement("div"); x.className="bar-x"; x.textContent = b.t+"m";
       col.appendChild(val); col.appendChild(bar); col.appendChild(x);
       container.appendChild(col);
@@ -618,17 +388,16 @@
       var el = document.createElement("div");
       el.className = "stack-seg"; el.dataset.k = k;
       el.style.width = pct+"%";
-      el.title = seg.label+": "+rand(seg.value)+" ("+pct.toFixed(1)+"%)";
+      el.title = seg.label+": "+ECD.rand(seg.value)+" ("+pct.toFixed(1)+"%)";
       stackEl.appendChild(el);
 
       var li = document.createElement("div");
       li.className = "legend-item";
-      li.innerHTML = "<span class=\"sw c"+k+"\"></span><span class=\"lbl\">"+esc(seg.label)+"</span><span class=\"amt tabular\">"+rand(seg.value)+"</span>";
+      li.innerHTML = "<span class=\"sw c"+k+"\"></span><span class=\"lbl\">"+ECD.esc(seg.label)+"</span><span class=\"amt tabular\">"+ECD.rand(seg.value)+"</span>";
       legendEl.appendChild(li);
     });
   }
 
-  // ---------------- main render ----------------
   var RESULTS_TEMPLATE = [
     '<div class="stat-row" id="stat-row"></div>',
     '<div class="card verdict-card" id="verdict-card"></div>',
@@ -650,7 +419,7 @@
     '<div class="card">',
     '  <details class="schedule" id="schedule-details">',
     '    <summary><svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 1L8 5L2 9" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="schedule-title">Full amortisation schedule</span></summary>',
-    '    <div class="table-scroll"><table class="schedule-table"><thead><tr>',
+    '    <div class="table-scroll"><table class="data-table"><thead><tr>',
     '      <th>Month</th><th>Opening</th><th>Instalment</th><th>Interest</th><th>Principal</th><th>Service fee</th><th>Total payment</th><th>Closing</th>',
     '    </tr></thead><tbody id="schedule-body"></tbody></table></div>',
     '  </details>',
@@ -658,36 +427,31 @@
   ].join("\n");
 
   function render(){
-    var applicant = els.applicant.value.trim() || "the applicant";
-    var amount = num(els.amount,0), rate = num(els.rate,0), term = Math.max(1, Math.round(num(els.term,1))),
-        grace = Math.max(0, Math.round(num(els.grace,0))), initFee = num(els.initFee,0),
-        svcFee = num(els.svcFee,0), capacity = num(els.capacity,0);
-    grace = Math.min(grace, term);
+    var d = currentFormData();
+    var applicant = d.applicant;
 
-    var rep = repaymentReport(amount, rate, term, grace, initFee, state.initFinanced, svcFee);
-    var aff = affordabilityReport(capacity, rate, term, amount, initFee, state.initFinanced, svcFee);
+    var rep = ECD.repaymentReport(d.amount, d.rate, d.term, d.grace, d.initFee, d.initFinanced, d.svcFee);
+    var aff = ECD.affordabilityReport(d.capacity, d.rate, d.term, d.amount, d.initFee, d.initFinanced, d.svcFee);
 
     if(!els.results.dataset.built){
       els.results.innerHTML = RESULTS_TEMPLATE;
       els.results.dataset.built = "1";
     }
 
-    // stat row
     document.getElementById("stat-row").innerHTML =
-      '<div class="stat-tile lead"><div class="stat-label">All-in monthly payment</div><div class="stat-value tabular">'+rand2(rep.allIn)+'</div><div class="stat-sub">'+rand2(rep.instalment)+' instalment + '+rand2(svcFee)+' service fee</div></div>' +
-      '<div class="stat-tile"><div class="stat-label">Total interest</div><div class="stat-value tabular">'+rand(rep.totalInterest)+'</div></div>' +
-      '<div class="stat-tile"><div class="stat-label">Total fees</div><div class="stat-value tabular">'+rand(rep.totalFees)+'</div><div class="stat-sub">init + service, over '+term+'m</div></div>' +
-      '<div class="stat-tile"><div class="stat-label">Total repayable</div><div class="stat-value tabular">'+rand(rep.totalRepayable)+'</div></div>' +
+      '<div class="stat-tile lead"><div class="stat-label">All-in monthly payment</div><div class="stat-value tabular">'+ECD.rand2(rep.allIn)+'</div><div class="stat-sub">'+ECD.rand2(rep.instalment)+' instalment + '+ECD.rand2(d.svcFee)+' service fee</div></div>' +
+      '<div class="stat-tile"><div class="stat-label">Total interest</div><div class="stat-value tabular">'+ECD.rand(rep.totalInterest)+'</div></div>' +
+      '<div class="stat-tile"><div class="stat-label">Total fees</div><div class="stat-value tabular">'+ECD.rand(rep.totalFees)+'</div><div class="stat-sub">init + service, over '+d.term+'m</div></div>' +
+      '<div class="stat-tile"><div class="stat-label">Total repayable</div><div class="stat-value tabular">'+ECD.rand(rep.totalRepayable)+'</div></div>' +
       '<div class="stat-tile"><div class="stat-label">Cost of credit</div><div class="stat-value tabular">'+rep.costPct.toFixed(1)+'%</div><div class="stat-sub">of amount lent</div></div>';
 
-    // verdict card
     var vc = document.getElementById("verdict-card");
     if(aff.insufficient){
       vc.innerHTML =
-        '<div class="verdict-head"><h2>Affordability for '+esc(applicant)+'</h2><span class="pill critical">Not affordable</span></div>' +
-        '<div class="verdict-body"><p>This capacity ('+rand(capacity)+'/month) does not even cover the '+rand2(svcFee)+' monthly service fee. No capital can be repaid — raise the capacity or lower the fee before lending anything.</p></div>';
+        '<div class="verdict-head"><h2>Affordability for '+ECD.esc(applicant)+'</h2><span class="pill critical">Not affordable</span></div>' +
+        '<div class="verdict-body"><p>This capacity ('+ECD.rand(d.capacity)+'/month) does not even cover the '+ECD.rand2(d.svcFee)+' monthly service fee. No capital can be repaid — raise the capacity or lower the fee before lending anything.</p></div>';
     } else {
-      var head = '<div class="verdict-head"><h2>Affordability for '+esc(applicant)+'</h2>';
+      var head = '<div class="verdict-head"><h2>Affordability for '+ECD.esc(applicant)+'</h2>';
       var body = '';
       if(aff.hasTarget){
         var pillClass = aff.verdict==="OK" ? "good" : aff.verdict==="RIGHT-SIZE" ? "warning" : "critical";
@@ -695,66 +459,89 @@
         head += '<span class="pill '+pillClass+'">'+pillText+'</span></div>';
         var msg;
         if(aff.verdict==="OK"){
-          msg = "The R"+Math.round(amount).toLocaleString("en-US")+" request fits within "+term+" months at this capacity.";
+          msg = "The R"+Math.round(d.amount).toLocaleString("en-US")+" request fits within "+d.term+" months at this capacity.";
         } else if(aff.verdict==="RIGHT-SIZE"){
-          msg = "This request needs about "+Math.ceil(aff.months)+" months to clear at this capacity. Over "+term+" months you can lend about "+rand(aff.maxToApplicant)+" instead.";
+          msg = "This request needs about "+Math.ceil(aff.months)+" months to clear at this capacity. Over "+d.term+" months you can lend about "+ECD.rand(aff.maxToApplicant)+" instead.";
         } else if(aff.months===Infinity){
-          msg = "Even indefinitely, this capacity can't clear the request — interest outpaces what's being paid off. Right-size to about "+rand(aff.maxToApplicant)+" or lift repayment capacity first.";
+          msg = "Even indefinitely, this capacity can't clear the request — interest outpaces what's being paid off. Right-size to about "+ECD.rand(aff.maxToApplicant)+" or lift repayment capacity first.";
         } else {
-          msg = "Not serviceable in a sensible term (over 60 months). Right-size to about "+rand(aff.maxToApplicant)+" or lift repayment capacity first.";
+          msg = "Not serviceable in a sensible term (over 60 months). Right-size to about "+ECD.rand(aff.maxToApplicant)+" or lift repayment capacity first.";
         }
-        body = '<div class="verdict-body"><p>'+esc(msg)+'</p><div class="verdict-figures">' +
-          '<div><span class="k">Max loan at '+term+'m</span><span class="v">'+rand(aff.maxToApplicant)+'</span></div>' +
+        body = '<div class="verdict-body"><p>'+ECD.esc(msg)+'</p><div class="verdict-figures">' +
+          '<div><span class="k">Max loan at '+d.term+'m</span><span class="v">'+ECD.rand(aff.maxToApplicant)+'</span></div>' +
           '<div><span class="k">Months to repay request</span><span class="v">'+(aff.months===Infinity?"never":aff.months.toFixed(1))+'</span></div>' +
-          '<div><span class="k">Available after service fee</span><span class="v">'+rand2(aff.avail)+'</span></div>' +
+          '<div><span class="k">Available after service fee</span><span class="v">'+ECD.rand2(aff.avail)+'</span></div>' +
           '</div></div>';
       } else {
         head += '</div>';
-        body = '<div class="verdict-body"><p>Enter a requested loan amount to see a right-size verdict. Max loan serviceable at '+term+' months: <strong>'+rand(aff.maxToApplicant)+'</strong>.</p></div>';
+        body = '<div class="verdict-body"><p>Enter a requested loan amount to see a right-size verdict. Max loan serviceable at '+d.term+' months: <strong>'+ECD.rand(aff.maxToApplicant)+'</strong>.</p></div>';
       }
       vc.innerHTML = head + body;
     }
 
-    // balance chart
-    buildBalanceChart(document.getElementById("balance-chart"), rep.schedule, rep.financed, term);
+    buildBalanceChart(document.getElementById("balance-chart"), rep.schedule, rep.financed, d.term);
 
-    // term bars + composition (only meaningful once capacity covers the fee)
     var termBarsEl = document.getElementById("term-bars");
     var compBar = document.getElementById("comp-bar"), compLegend = document.getElementById("comp-legend");
     if(aff.insufficient){
       termBarsEl.innerHTML = '<p style="color:var(--ink-faint);font-size:12.5px;">Not enough capacity to size a loan at any term.</p>';
     } else {
-      buildTermBars(termBarsEl, aff.byTerm, term);
+      buildTermBars(termBarsEl, aff.byTerm, d.term);
     }
     buildCompositionBar(compBar, compLegend, [
-      {label:"Principal (amount lent)", value:amount},
+      {label:"Principal (amount lent)", value:d.amount},
       {label:"Interest", value:rep.totalInterest},
       {label:"Fees (init + service)", value:rep.totalFees}
     ]);
 
-    // schedule table
-    document.getElementById("schedule-title").textContent = "Full amortisation schedule ("+term+" months)";
-    var body = document.getElementById("schedule-body");
+    document.getElementById("schedule-title").textContent = "Full amortisation schedule ("+d.term+" months)";
+    var body2 = document.getElementById("schedule-body");
     var rows = [];
     for(var i=1;i<rep.schedule.length;i++){
       var pt = rep.schedule[i];
       rows.push('<tr class="'+(pt.isGrace?"grace-row":"")+'">' +
         '<td>'+pt.m+'</td>' +
-        '<td class="tabular">'+rand2(pt.opening)+'</td>' +
-        '<td class="tabular">'+(pt.isGrace?"—":rand2(pt.instal))+'</td>' +
-        '<td class="tabular">'+rand2(pt.interest)+'</td>' +
-        '<td class="tabular">'+rand2(pt.principal)+'</td>' +
-        '<td class="tabular">'+rand2(pt.serviceFee)+'</td>' +
-        '<td class="tabular">'+rand2(pt.total)+'</td>' +
-        '<td class="tabular">'+rand2(pt.balance)+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.opening)+'</td>' +
+        '<td class="tabular">'+(pt.isGrace?"—":ECD.rand2(pt.instal))+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.interest)+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.principal)+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.serviceFee)+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.total)+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.balance)+'</td>' +
         '</tr>');
     }
-    body.innerHTML = rows.join("");
+    body2.innerHTML = rows.join("");
+  }
+
+  // ---------------- load an existing application when ?id= is present ----------------
+  function loadFromQuery(){
+    var params = new URLSearchParams(window.location.search);
+    var id = params.get("id");
+    if(!id) return false;
+    var rec = ECD.getApplication(id);
+    if(!rec) return false;
+    state.editingId = id;
+    state.initFinanced = !!rec.initFinanced;
+    els.applicant.value = rec.applicant;
+    els.amount.value = rec.amount;
+    els.rate.value = rec.rate;
+    els.term.value = rec.term;
+    els.grace.value = rec.grace;
+    els.initFee.value = rec.initFee;
+    els.svcFee.value = rec.svcFee;
+    els.capacity.value = rec.capacity;
+    updateFinToggle();
+    setSaveMode(true);
+    return true;
   }
 
   buildPresetButtons();
   updateFinToggle();
-  render();
+  if(!loadFromQuery()){
+    applyPreset(0);
+  } else {
+    render();
+  }
 })();
 </script>
 </body>

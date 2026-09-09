@@ -1,17 +1,33 @@
 # ECD Loan Calculator
 
-An interactive repayment and affordability calculator for **Rhiza Ventures' SeedFund Connect** ECD growth loans — built as a web demo around [`ecd_loan_calculator (1).py`](<ecd_loan_calculator (1).py>).
+A small tool for **Rhiza Ventures' SeedFund Connect** to size, save and print ECD growth-loan assessments — built around [`ecd_loan_calculator (1).py`](<ecd_loan_calculator (1).py>).
 
-It works out monthly repayments and affordability for informal ECD (Early Childhood Development) growth loans, including the National Credit Act fees (once-off initiation fee + monthly service fee), and right-sizes a request against what an applicant can realistically pay.
+It works out monthly repayments and affordability for informal ECD (Early Childhood Development) growth loans, including the National Credit Act fees (once-off initiation fee + monthly service fee), right-sizes a request against what an applicant can realistically pay, and produces a printable repayment summary for the ECD to keep.
 
-## Contents
+Colours are drawn from the Rhiza Holdings brand handbook (Vibrant Orange, Mint/Teal, Sky Blue, Primary Dark Slate, and Golden Yellow — the handbook's own ECD-division colour, used here as the primary accent).
 
-- [`index.html`](index.html) — the web interface. Static HTML/CSS/JS, no build step, no dependencies. It ports the Python script's math (`pmt`, `max_loan`, grace-period interest capitalisation, the months-to-repay log formula, and the OK / RIGHT-SIZE / DECLINE verdict logic) line-for-line into JavaScript, so every figure matches what the CLI script prints.
-- [`ecd_loan_calculator (1).py`](<ecd_loan_calculator (1).py>) — the original command-line calculator. Run it directly (`python "ecd_loan_calculator (1).py"`) or interactively (`--interactive`).
+## Pages
+
+- **`index.html` — New Application.** The calculator: enter an ECD's details and it works out the repayment schedule and an OK / right-size / decline verdict live. `Save application` stores it; `Print / save as PDF` opens a clean printable summary of whatever is currently on screen, saved or not. Open `index.html?id=<id>` to load a saved application back in for editing.
+- **`applications.html` — Applications.** Every saved application on this device: applicant, amount, term, a verdict pill, and actions to open, print, or delete it.
+- **`print.html` — Print report.** A print-formatted repayment summary (letterhead, key figures, verdict, full amortisation schedule, sign-off lines). Reached from either page; `window.print()` lets the browser's print dialog save it as a PDF.
+
+Shared code lives in `assets/`:
+- `assets/calc.js` — the calculation functions (ported line-for-line from the Python script), formatting helpers, and the `localStorage` read/write helpers for saved applications.
+- `assets/style.css` — the shared design system (tokens, components, print styles).
+
+## Data storage — browser-local only (for now)
+
+Saved applications are kept in this browser's `localStorage`. That means:
+- They're private to this device/browser — nothing is sent anywhere.
+- Clearing browser data, or opening the site on another device, loses them.
+- Two people using the tool don't see each other's saved applications.
+
+This is intentional for the current demo stage. Moving to a shared store (e.g. a small database + API routes on Vercel) is a natural next step once this needs to be used by more than one person.
 
 ## Running locally
 
-The web interface needs no server or build step — open `index.html` directly in a browser, or serve the folder:
+No server or build step needed — open `index.html` directly in a browser, or serve the folder:
 
 ```
 python -m http.server 8000
@@ -21,12 +37,8 @@ then visit `http://localhost:8000`.
 
 ## Deploying to Vercel
 
-This is a static site, so Vercel needs no build command or output directory — just import the repo and deploy. `index.html` at the project root is served as-is.
+Static site — Vercel needs no build command or output directory. Import the repo and deploy; `index.html` at the project root is served as-is, and `applications.html` / `print.html` are reachable at their own paths.
 
-## Features demoed
+## Other files
 
-- Live repayment summary: all-in monthly payment, total interest, total fees, total repayable, cost of credit.
-- Affordability verdicts (OK / right-size / decline) with the same reasoning the script prints, including the "capacity doesn't cover the service fee" edge case.
-- A balance-over-term chart, a max-loan-by-term chart, and a principal/interest/fees cost breakdown.
-- A full amortisation schedule table.
-- Four preset scenarios spanning the verdict range, plus every input from the script (loan amount, rate, term, grace period, initiation fee financed/upfront, service fee, repayment capacity).
+- [`ecd_loan_calculator (1).py`](<ecd_loan_calculator (1).py>) — the original command-line calculator. Run it directly (`python "ecd_loan_calculator (1).py"`) or interactively (`--interactive`).

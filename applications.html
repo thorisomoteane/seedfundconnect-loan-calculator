@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Applications — ECD Loan Calculator</title>
+<meta name="description" content="Saved ECD loan applications for SeedFund Connect — review, print or delete a past assessment.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-nav">
+  <a class="brand" href="index.html">
+    <span class="brand-mark"><span></span><span></span><span></span></span>
+    <span>SeedFund Connect<small>ECD Loan Calculator</small></span>
+  </a>
+  <nav aria-label="Primary">
+    <a href="index.html" class="nav-link" id="nav-new">New Application</a>
+    <a href="applications.html" class="nav-link" id="nav-list" aria-current="page">Applications</a>
+  </nav>
+</header>
+
+<header class="app-header">
+  <div class="header-row">
+    <div>
+      <div class="eyebrow"><span class="mark"><svg viewBox="0 0 10 10" fill="none"><path d="M1 6.5L4 9L9 1.5" stroke="#26333C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Rhiza Ventures &middot; SeedFund Connect</div>
+      <h1>Applications</h1>
+      <p class="lede">Every ECD growth-loan assessment saved on this device. Review a request, print its repayment summary, or remove it.</p>
+    </div>
+    <a href="index.html" class="btn btn-primary">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 3v9M3 7.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      New application
+    </a>
+  </div>
+</header>
+
+<main class="page">
+  <div class="list-toolbar">
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M13 13l-3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input type="search" id="search" placeholder="Search by ECD name…" aria-label="Search applications">
+    </div>
+    <span class="note" id="count-label" style="border:none;padding:0;"></span>
+  </div>
+
+  <div id="list-container"></div>
+</main>
+
+<footer class="app-footer">
+  <span>SeedFund Connect is a division of Rhiza Ventures. Applications are stored in this browser only — this is a local demo store, not a shared database.</span>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span class="dot"></span>
+  <span id="toast-msg">Deleted.</span>
+</div>
+
+<script src="assets/calc.js"></script>
+<script>
+(function(){
+  "use strict";
+  var ECD = window.ECD;
+  var listEl = document.getElementById("list-container");
+  var searchEl = document.getElementById("search");
+  var countEl = document.getElementById("count-label");
+  var toast = document.getElementById("toast"), toastMsg = document.getElementById("toast-msg");
+
+  function showToast(msg){
+    toastMsg.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function(){ toast.classList.remove("show"); }, 2600);
+  }
+
+  function verdictFor(rec){
+    var aff = ECD.affordabilityReport(rec.capacity, rec.rate, rec.term, rec.amount, rec.initFee, rec.initFinanced, rec.svcFee);
+    if(aff.insufficient) return {cls:"critical", text:"Insufficient capacity"};
+    if(!aff.hasTarget) return {cls:"neutral", text:"No amount set"};
+    if(aff.verdict==="OK") return {cls:"good", text:"OK"};
+    if(aff.verdict==="RIGHT-SIZE") return {cls:"warning", text:"Right-size"};
+    return {cls:"critical", text:"Decline"};
+  }
+
+  function render(){
+    var all = ECD.loadApplications();
+    var q = searchEl.value.trim().toLowerCase();
+    var items = q ? all.filter(function(a){ return (a.applicant||"").toLowerCase().indexOf(q)!==-1; }) : all;
+
+    countEl.textContent = all.length ? (items.length + " of " + all.length + " application" + (all.length===1?"":"s")) : "";
+
+    if(all.length===0){
+      listEl.innerHTML =
+        '<div class="empty-state">' +
+        '  <div class="mark"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 3h9l3 3v11H4V3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 10h6M7 13h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>' +
+        '  <h2>No applications yet</h2>' +
+        '  <p>Saved ECD loan assessments will appear here. Start a new application to size a request and save it for the file.</p>' +
+        '  <a href="index.html" class="btn btn-primary">New application</a>' +
+        '</div>';
+      return;
+    }
+
+    if(items.length===0){
+      listEl.innerHTML = '<div class="empty-state"><h2>No matches</h2><p>No saved applicant matches “'+ECD.esc(searchEl.value)+'”.</p></div>';
+      return;
+    }
+
+    var rows = items.map(function(rec){
+      var v = verdictFor(rec);
+      return '<tr data-id="'+rec.id+'">' +
+        '<td class="applicant-cell">'+ECD.esc(rec.applicant)+'<span class="saved-at">Saved '+ECD.fmtDate(rec.savedAt)+'</span></td>' +
+        '<td class="num-cell">'+ECD.rand(rec.amount)+'</td>' +
+        '<td class="num-cell">'+rec.term+'m'+(rec.rate>0?' · '+rec.rate+'%':'')+'</td>' +
+        '<td><span class="pill '+v.cls+'">'+v.text+'</span></td>' +
+        '<td class="actions-cell">' +
+        '  <a class="btn btn-secondary" href="index.html?id='+encodeURIComponent(rec.id)+'">Open</a> ' +
+        '  <a class="btn btn-secondary" href="print.html?id='+encodeURIComponent(rec.id)+'" target="_blank" rel="noopener">Print</a> ' +
+        '  <button type="button" class="btn btn-danger" data-delete="'+rec.id+'">Delete</button>' +
+        '</td>' +
+        '</tr>';
+    }).join("");
+
+    listEl.innerHTML =
+      '<div class="app-table-wrap"><div class="table-scroll"><table class="app-table">' +
+      '<thead><tr><th>ECD / Applicant</th><th>Amount requested</th><th>Term</th><th>Verdict</th><th></th></tr></thead>' +
+      '<tbody>'+rows+'</tbody></table></div></div>';
+  }
+
+  listEl.addEventListener("click", function(e){
+    var btn = e.target.closest("[data-delete]");
+    if(!btn) return;
+    var id = btn.getAttribute("data-delete");
+    var rec = ECD.getApplication(id);
+    var name = rec ? rec.applicant : "this application";
+    if(window.confirm("Delete the application for \""+name+"\"? This can't be undone.")){
+      ECD.deleteApplication(id);
+      showToast("Deleted " + name + ".");
+      render();
+    }
+  });
+
+  searchEl.addEventListener("input", render);
+
+  render();
+})();
+</script>
+</body>
+</html>

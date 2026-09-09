@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Print — ECD Loan Calculator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="print-toolbar no-print">
+  <a href="applications.html" class="btn btn-ghost">
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M9.5 3L4 7.5l5.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Back to applications
+  </a>
+  <button type="button" class="btn btn-primary" id="btn-print">
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M4 5.5V2h7v3.5M4 11h7v2.5H4V11Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><rect x="1.5" y="5.5" width="12" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+    Print / save as PDF
+  </button>
+</div>
+
+<article class="print-sheet" id="sheet">
+  <p class="note" id="loading-note">Loading application…</p>
+</article>
+
+<script src="assets/calc.js"></script>
+<script>
+(function(){
+  "use strict";
+  var ECD = window.ECD;
+  var sheet = document.getElementById("sheet");
+
+  function data(){
+    var params = new URLSearchParams(window.location.search);
+    var id = params.get("id");
+    if(id){ return ECD.getApplication(id); }
+    if(params.get("source")==="draft"){ return ECD.getPrintDraft(); }
+    return null;
+  }
+
+  function renderReport(d){
+    var rep = ECD.repaymentReport(d.amount, d.rate, d.term, d.grace, d.initFee, d.initFinanced, d.svcFee);
+    var aff = ECD.affordabilityReport(d.capacity, d.rate, d.term, d.amount, d.initFee, d.initFinanced, d.svcFee);
+    var today = new Date();
+    var ref = "SFC-" + today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + String(today.getDate()).padStart(2,"0") + "-" + (d.id ? d.id.replace(/[^a-zA-Z0-9]/g,"").slice(-5).toUpperCase() : Math.random().toString(36).slice(2,7).toUpperCase());
+
+    var verdictHtml = "";
+    if(aff.insufficient){
+      verdictHtml = '<span class="pill critical">Not affordable</span><p style="margin-top:10px;color:var(--ink-muted);">This capacity ('+ECD.rand(d.capacity)+'/month) does not cover the '+ECD.rand2(d.svcFee)+' monthly service fee, so no capital can be repaid at this level.</p>';
+    } else if(aff.hasTarget){
+      var pillClass = aff.verdict==="OK" ? "good" : aff.verdict==="RIGHT-SIZE" ? "warning" : "critical";
+      var pillText = aff.verdict==="OK" ? "OK — fits the request" : aff.verdict==="RIGHT-SIZE" ? "Right-size" : "Decline / develop";
+      var msg;
+      if(aff.verdict==="OK"){
+        msg = "The R"+Math.round(d.amount).toLocaleString("en-US")+" request fits within "+d.term+" months at the stated repayment capacity.";
+      } else if(aff.verdict==="RIGHT-SIZE"){
+        msg = "This request needs about "+Math.ceil(aff.months)+" months to clear at this capacity. Over "+d.term+" months, about "+ECD.rand(aff.maxToApplicant)+" is serviceable instead.";
+      } else if(aff.months===Infinity){
+        msg = "Even indefinitely, this capacity cannot clear the request. Right-size to about "+ECD.rand(aff.maxToApplicant)+" or lift repayment capacity first.";
+      } else {
+        msg = "Not serviceable in a sensible term (over 60 months). Right-size to about "+ECD.rand(aff.maxToApplicant)+" or lift repayment capacity first.";
+      }
+      verdictHtml = '<span class="pill '+pillClass+'">'+pillText+'</span><p style="margin-top:10px;color:var(--ink-muted);">'+ECD.esc(msg)+'</p>';
+    } else {
+      verdictHtml = '<span class="pill neutral">No amount requested</span>';
+    }
+
+    var scheduleRows = rep.schedule.slice(1).map(function(pt){
+      return '<tr class="'+(pt.isGrace?"grace-row":"")+'">' +
+        '<td>'+pt.m+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.opening)+'</td>' +
+        '<td class="tabular">'+(pt.isGrace?"—":ECD.rand2(pt.instal))+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.interest)+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.principal)+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.serviceFee)+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.total)+'</td>' +
+        '<td class="tabular">'+ECD.rand2(pt.balance)+'</td>' +
+        '</tr>';
+    }).join("");
+
+    sheet.innerHTML =
+      '<div class="letterhead">' +
+      '  <div class="org">' +
+      '    <div class="org-mark"><span></span><span></span><span></span></div>' +
+      '    <div><div class="org-name">SeedFund Connect</div><div class="org-sub">A division of Rhiza Ventures</div></div>' +
+      '  </div>' +
+      '  <div class="doc-meta">Reference '+ref+'<br>Generated '+ECD.fmtDate(today.toISOString())+'</div>' +
+      '</div>' +
+      '<div class="doc-title">' +
+      '  <h1>ECD Growth Loan — Repayment Summary</h1>' +
+      '  <p>Prepared for <strong>'+ECD.esc(d.applicant)+'</strong>. Keep this summary for your records.</p>' +
+      '</div>' +
+      '<div class="kv-grid">' +
+      '  <div class="kv"><div class="k">Loan amount</div><div class="v">'+ECD.rand(d.amount)+'</div></div>' +
+      '  <div class="kv"><div class="k">Interest rate</div><div class="v">'+d.rate+'% p.a.</div></div>' +
+      '  <div class="kv"><div class="k">Term</div><div class="v">'+d.term+' months'+(d.grace?' ('+d.grace+' grace)':'')+'</div></div>' +
+      '  <div class="kv"><div class="k">Initiation fee</div><div class="v">'+ECD.rand(d.initFee)+' ('+(d.initFinanced?'financed':'upfront')+')</div></div>' +
+      '  <div class="kv"><div class="k">Monthly service fee</div><div class="v">'+ECD.rand2(d.svcFee)+'</div></div>' +
+      '  <div class="kv"><div class="k">Repayment capacity</div><div class="v">'+ECD.rand(d.capacity)+'/mo</div></div>' +
+      '</div>' +
+      '<section>' +
+      '  <h2>Repayment</h2>' +
+      '  <div class="kv-grid">' +
+      '    <div class="kv"><div class="k">All-in monthly payment</div><div class="v">'+ECD.rand2(rep.allIn)+'</div></div>' +
+      '    <div class="kv"><div class="k">Base instalment</div><div class="v">'+ECD.rand2(rep.instalment)+'</div></div>' +
+      '    <div class="kv"><div class="k">Total interest</div><div class="v">'+ECD.rand(rep.totalInterest)+'</div></div>' +
+      '    <div class="kv"><div class="k">Total fees</div><div class="v">'+ECD.rand(rep.totalFees)+'</div></div>' +
+      '    <div class="kv"><div class="k">Total repayable</div><div class="v">'+ECD.rand(rep.totalRepayable)+'</div></div>' +
+      '    <div class="kv"><div class="k">Cost of credit</div><div class="v">'+rep.costPct.toFixed(1)+'%</div></div>' +
+      '  </div>' +
+      '</section>' +
+      '<section>' +
+      '  <h2>Affordability &amp; verdict</h2>' +
+      '  '+verdictHtml +
+      '</section>' +
+      '<section>' +
+      '  <h2>Amortisation schedule</h2>' +
+      '  <div class="table-scroll"><table class="data-table"><thead><tr>' +
+      '    <th>Month</th><th>Opening</th><th>Instalment</th><th>Interest</th><th>Principal</th><th>Service fee</th><th>Total payment</th><th>Closing</th>' +
+      '  </tr></thead><tbody>'+scheduleRows+'</tbody></table></div>' +
+      '</section>' +
+      '<div class="signoff">' +
+      '  <div><div class="line">Loan officer, SeedFund Connect</div></div>' +
+      '  <div><div class="line">'+ECD.esc(d.applicant)+'</div></div>' +
+      '</div>' +
+      '<p class="disclaimer">This summary is an indicative calculation generated by the SeedFund Connect ECD Loan Calculator for planning purposes only. It does not constitute a binding loan offer or agreement. Figures include the National Credit Act once-off initiation fee and monthly service fee. Final terms are subject to SeedFund Connect\'s formal approval process.</p>';
+  }
+
+  var d = data();
+  if(!d){
+    sheet.innerHTML =
+      '<h2 style="font-size:18px;">Nothing to print</h2>' +
+      '<p class="note" style="border:none;padding:0;">This link has no application attached. Go back to <a href="applications.html">Applications</a> and choose Print on a saved application, or use Print / save as PDF from the calculator.</p>';
+  } else {
+    renderReport(d);
+    document.title = "Print — " + d.applicant + " — ECD Loan Calculator";
+  }
+
+  document.getElementById("btn-print").addEventListener("click", function(){ window.print(); });
+})();
+</script>
+</body>
+</html>
